@@ -1,6 +1,6 @@
 # TODO
 
-## Pipline - nächste Schritte
+## Pipeline - nächste Schritte
 * Therapeutensätze ausfiltern
 * Klammern, nicht-gesprochenes ausfiltern
 * Tokenization u. Lemmatisierung (HanTa gibt vor)
