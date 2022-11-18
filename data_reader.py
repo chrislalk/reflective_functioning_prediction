@@ -5,16 +5,19 @@ from typing import List
 def keep_line(line: str) -> bool:
     """
     Returns a boolean indicating whether a line should be kept in the text segment
+    Removes brackets and therapist utterances
     """
     ls = line.strip()
     if len(ls) == 0:
         return False
     if ls.startswith("{") and ls.endswith("}"):
         return False
-    if ls.startswith("[") and ls.endswith("]"):
+    elif ls.startswith("[") and ls.endswith("]"):
         return False
-    if not (line.startswith("T:") or line.startswith("P:")):
-        raise ValueError(f"Unknown line type (who is speaking?): {line}")
+    if not (ls.startswith("T:") or ls.startswith("P:")):
+        raise ValueError(f"Unknown line type (who is speaking?): {ls}")
+    if ls.startswith("T:"):
+        return False
     return True
 
 
