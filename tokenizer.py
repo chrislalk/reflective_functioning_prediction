@@ -3,9 +3,12 @@ import re
 
 _RE_COMBINE_WHITESPACE = re.compile(r"\s+")
 REPLACE_TO_DOTS = [
-    # since we do not know how many words are missing:
+    # since we do not know how many words are missing when transcribers could not understand something:
     re.compile(r"\(\s*unverständlich\s*\)"),
+    re.compile(r"/"),
 ]
+_RE_VALID_WORD = re.compile(r"^[äöüßÄÖÜa-zA-Z]*[0-9]*$")
+_RE_HYPHENATED_WORD = re.compile(f"^[äöüßÄÖÜa-zA-Z]+(-[äöüßÄÖÜa-zA-Z]+)+$")
 
 
 def keep_token(token: str) -> bool:
@@ -17,12 +20,16 @@ def keep_token(token: str) -> bool:
     assert "\n" not in token
     assert "\r" not in token
     token = token.strip()
-    if len(token) == 0:
+    if len(token) == 0 or \
+            token == "P:" or\
+            token.endswith("-"):
         return False
+    if _RE_VALID_WORD.match(token) is None and not token == ".":
+        raise ValueError(f"Not a word: {token}")
     return True
 
 
-def strip_brackets(segment: str, start_char: str="(", end_char: str=")") -> str:
+def strip_brackets(segment: str, start_char: str = "(", end_char: str = ")") -> str:
     """
     Remove brackets and all content within. Checks for every opening bracket if it is closed.
     :param segment: The text
@@ -53,7 +60,11 @@ def prepare_segment_for_tokenization(segment: str) -> str:
     Apply various replacements, strip brackets
     """
     # transcribers use commas more like enumerations, so do not use them
-    segment = segment.replace(",", " ")
+    segment = segment.replace(",", ". ")
+    # strip quotation marks
+    segment = segment.replace('"', "")
+    segment = segment.replace('„', "")
+    segment = segment.replace('“', "")
     # combine multiple whitespaces
     segment = _RE_COMBINE_WHITESPACE.sub(" ", segment)
     segment = segment.strip()
@@ -66,6 +77,19 @@ def prepare_segment_for_tokenization(segment: str) -> str:
                                  ["{", "}"]]:
         segment = strip_brackets(segment, start_char=start_char, end_char=end_char)
     return segment
+
+
+def split_hyphen_nouns(tokens: List[str]) -> List[str]:
+    """
+    Search for tokens containing composite nouns joined by a hyphen, break them into multiple tokens
+    """
+    split_tokens = []
+    for token in tokens:
+        if _RE_HYPHENATED_WORD.match(token) is not None:
+            split_tokens += token.split("-")
+        else:
+            split_tokens += [token]
+    return split_tokens
 
 
 def tokenize(segment: str) -> List[str]:
@@ -82,13 +106,15 @@ def tokenize(segment: str) -> List[str]:
                 tokens += [current_token]
                 current_token = ""
         elif char == ".":
-            assert len(current_token) > 0
-            tokens += [current_token, "."]
+            if len(current_token) > 0:
+                tokens += [current_token]
+            tokens += ["."]
             current_token = ""
         else:
             current_token += char
     if len(current_token) > 0:
         tokens += [current_token]
+    tokens = split_hyphen_nouns(tokens)
     return [token for token in tokens if keep_token(token)]
 
 
