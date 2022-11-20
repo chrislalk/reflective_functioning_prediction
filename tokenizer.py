@@ -25,7 +25,12 @@ def keep_token(token: str) -> bool:
             token.endswith("-"):
         return False
     if _RE_VALID_WORD.match(token) is None and not token == ".":
-        raise ValueError(f"Not a word: {token}")
+        # word does not match rule
+        # see if it is an anonymized name/place etc.
+        if token.endswith("*") and _RE_VALID_WORD.match(token[:-1]) is not None:
+            pass
+        else:
+            raise ValueError(f"Not a word: {token}")
     return True
 
 
