@@ -6,6 +6,8 @@ REPLACE_TO_DOTS = [
     # since we do not know how many words are missing when transcribers could not understand something:
     re.compile(r"\(\s*unverständlich\s*\)"),
     re.compile(r"/"),
+    re.compile(r"\?"),
+    re.compile(r"\!"),
 ]
 _RE_VALID_WORD = re.compile(r"^[äöüßÄÖÜa-zA-Z]*[0-9]*$")
 _RE_HYPHENATED_WORD = re.compile(f"^[äöüßÄÖÜa-zA-Z]+(-[äöüßÄÖÜa-zA-Z]+)+$")
@@ -22,7 +24,10 @@ def keep_token(token: str) -> bool:
     token = token.strip()
     if len(token) == 0 or \
             token == "P:" or\
-            token.endswith("-"):
+            token.endswith("-") or\
+            token == "+" or\
+            token == "-" or\
+            token == '–':
         return False
     if _RE_VALID_WORD.match(token) is None and not token == ".":
         # word does not match rule
@@ -66,10 +71,11 @@ def prepare_segment_for_tokenization(segment: str) -> str:
     """
     # transcribers use commas more like enumerations, so do not use them
     segment = segment.replace(",", ". ")
-    # strip quotation marks
+    # strip quotation marks and other special characters
     segment = segment.replace('"', "")
     segment = segment.replace('„', "")
     segment = segment.replace('“', "")
+    segment = segment.replace('+', "")
     # combine multiple whitespaces
     segment = _RE_COMBINE_WHITESPACE.sub(" ", segment)
     segment = segment.strip()
