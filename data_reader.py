@@ -1,3 +1,5 @@
+import re
+
 import pandas as pd
 from typing import List
 
@@ -33,6 +35,16 @@ def strip_segment(segment: str) -> List[str]:
 def read_full_dataset(path: str) -> pd.DataFrame:
     df = pd.read_excel(path)
     df["Segment_preproc"] = [strip_segment(segment) for segment in df["Segment"]]
+    df[["Patient", "Session", "Dokument_Residual"]] = df["Dokumentname"].str.split("_", expand=True)
+    if not all(valid := df["Patient"].str.match(pat="^[a-zA-Z0-9öäüßÖÄÜ]+$", case=False)):
+        invalid_values = df.loc[~valid, "Dokumentname"]
+        raise NameError('Unexpected values for "Dokumentname":\n' + "\n".join(invalid_values))
+    if not all(valid := df["Session"].str.match(pat="^[0-9]+$", case=False)):
+        invalid_values = df.loc[~valid, "Dokumentname"]
+        raise NameError('Unexpected values for "Dokumentname":\n' + "\n".join(invalid_values))
+    if not all(valid := df["Dokument_Residual"].str.match(pat="^Blöcke$", case=False)):
+        invalid_values = df.loc[~valid, "Dokumentname"]
+        raise NameError('Unexpected values for "Dokumentname":\n' + "\n".join(invalid_values))
     return df
 
 
