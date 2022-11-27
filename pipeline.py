@@ -127,7 +127,7 @@ class Pipeline(object):
         result_df = pd.concat(result_df, ignore_index=True, axis=0)
         print(result_df)
         output_file = os.path.join(self.output_dir, "cv_results.txt")
-        result_df.to_csv(output_file, sep="\t")
+        result_df.to_csv(output_file, sep="\t", index=False)
 
 
 if __name__ == '__main__':
