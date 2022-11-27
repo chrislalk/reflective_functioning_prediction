@@ -149,14 +149,17 @@ def tokens_to_sentences(tokens: List[str]) -> List[List[str]]:
     return sentences
 
 
-def build_vocabulary(segments: List[str]) -> Dict[str, int]:
-    dictionary = dict()
-    for segment in segments:
-        for line in segment:
-            tokens = tokenize(line)
-            for token in tokens:
-                dictionary[token] = dictionary.get(token, 0) + 1
-    return dictionary
+def n_gram_count(segment: str, n: int) -> Dict[str, int]:
+    n_gram_counts = dict()
+    sentences = tokens_to_sentences(tokenize(segment))
+    for sentence in sentences:
+        n_gram_idx = 0
+        while n_gram_idx + n < len(sentence):
+            n_gram = tuple([word.lower() for word in sentence[n_gram_idx:n_gram_idx+n]])
+            assert len(n_gram) == n
+            n_gram_counts[n_gram] = n_gram_counts.get(n_gram, 0) + 1
+            n_gram_idx += 1
+    return n_gram_counts
 
 
 def write_vocabulary_by_frequency(vocabulary: Dict[str, int], handle:TextIO,
