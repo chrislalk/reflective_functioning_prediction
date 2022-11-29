@@ -162,8 +162,8 @@ def n_gram_count(segment: str, n: int) -> Dict[str, int]:
     return n_gram_counts
 
 
-def write_vocabulary_by_frequency(vocabulary: Dict[str, int], handle:TextIO,
-                                  sorting: str = Literal["frequency", "lexicographic"]):
+def write_vocabulary_by_frequency(vocabulary: Dict[str, int], handle: TextIO,
+                                  sorting: str = Literal["frequency", "lexicographic"]) -> None:
     if sorting == "frequency":
         vocab_sorted = sorted(vocabulary.items(), key=lambda x: -x[1])
     elif sorting == "lexicographic":

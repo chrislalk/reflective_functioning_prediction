@@ -16,7 +16,7 @@ def create_features(df: pd.DataFrame, n_gram_length: int,
     :return: The features as a dataframe,
     """
     if n_gram_selection is None:
-        n_gram_selection = count_all_n_grams(df, n_gram_length)
+        n_gram_selection = list_all_n_grams(df, n_gram_length)
 
     all_samples = []
     # each row in the dataframe is a sample for training/testing
@@ -45,7 +45,7 @@ def normalize_count_vector(feature_df: pd.DataFrame) -> pd.DataFrame:
     return feature_df
 
 
-def count_all_n_grams(df: pd.DataFrame, n_gram_length: int) -> Set[Tuple[str]]:
+def list_all_n_grams(df: pd.DataFrame, n_gram_length: int) -> Set[Tuple[str]]:
     # find all n-grams occurring in the dataframe
     n_gram_selection = set()
     for idx, segment in df.iterrows():

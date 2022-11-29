@@ -8,6 +8,9 @@ import pandas as pd
 import numpy as np
 import os
 
+import tokenizer
+import utils
+
 
 class Pipeline(object):
     def __init__(self, data_file, n_gram_length, output_dir):
@@ -36,10 +39,19 @@ class Pipeline(object):
         return sklearn.svm.SVR()
 
     def export_all_n_grams(self) -> None:
-        vocabulary = features.count_all_n_grams(self.full_data)
+        all_n_grams = features.list_all_n_grams(self.full_data, n_gram_length=self.n_gram_length)
+        all_counts = dict()
+        for idx, segment in self.full_data.iterrows():
+            segment_counts = features.count_n_grams(n_gram_length=self.n_gram_length, n_gram_selection=all_n_grams,
+                                                    segment=segment)
+            all_counts = utils.add_dicts(all_counts, segment_counts)
+        output_file = os.path.join(self.output_dir, "all_n_grams.txt")
+        with open(output_file, "w") as f:
+            tokenizer.write_vocabulary_by_frequency(all_counts, f, sorting="frequency")
 
     def run(self) -> None:
         self.full_data = data_reader.read_full_dataset(self.data_file)
+        self.export_all_n_grams()
         train_test_splits = Pipeline.get_train_test_splits(self.full_data)
         result_df = self.predict_validate(train_test_splits)
         print(result_df)
