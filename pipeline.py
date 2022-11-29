@@ -30,7 +30,8 @@ class Pipeline(object):
             yield patients[train], patients[test]
 
     @staticmethod
-    def create_features(df: pd.DataFrame, n_gram_length, n_gram_selection: Set[Tuple[str]] = None) -> Tuple[pd.DataFrame, Set[Tuple[str]]]:
+    def create_features(df: pd.DataFrame, n_gram_length,
+                        n_gram_selection: Set[Tuple[str]] = None) -> Tuple[pd.DataFrame, Set[Tuple[str]]]:
         """
 
         :param df:
@@ -78,6 +79,11 @@ class Pipeline(object):
                 feature_df += [pd.DataFrame(index=segment_df.index, data={df_key: count})]
             # first, concatenate the converted frequency count dataframes
             feature_df = pd.concat(feature_df, axis=1, ignore_index=False)
+            # normalize word counts to compensate for different lengths of segments
+            df_sum = feature_df.sum(axis=1)
+            if np.all(df_sum > 0):
+                feature_df = feature_df.div(df_sum, axis=0)
+            assert np.all(feature_df >= 0)
             # NaNs should not occur because we added zero-count entries earlier
             assert np.all(np.isfinite(feature_df))
             # then, prepend the original sample info (subject, block etc.). This would be removed if we were to use
