@@ -35,14 +35,18 @@ class Pipeline(object):
         """
         return sklearn.svm.SVR()
 
+    def export_all_n_grams(self) -> None:
+        vocabulary = features.count_all_n_grams(self.full_data)
+
     def run(self) -> None:
         self.full_data = data_reader.read_full_dataset(self.data_file)
         train_test_splits = Pipeline.get_train_test_splits(self.full_data)
         result_df = self.predict_validate(train_test_splits)
+        print(result_df)
         output_file = os.path.join(self.output_dir, "cv_results.txt")
         result_df.to_csv(output_file, sep="\t", index=False)
 
-    def predict_validate(self, train_test_splits):
+    def predict_validate(self, train_test_splits: Iterable[Tuple[List[str], List[str]]]) -> pd.DataFrame:
         result_df = []
         for train, test in train_test_splits:
             training_data = self.full_data.loc[self.full_data["Patient"].isin(train)]
@@ -53,11 +57,11 @@ class Pipeline(object):
             result_df += [Pipeline.score_result(selected_n_grams, test, testing_data, testing_features,
                                                 train, training_features)]
         result_df = pd.concat(result_df, ignore_index=True, axis=0)
-        print(result_df)
         return result_df
 
     @staticmethod
-    def score_result(selected_n_grams, test, testing_data, testing_features, train, training_features):
+    def score_result(selected_n_grams: Set[Tuple[str]], test: List[str], testing_data: pd.DataFrame,
+                     testing_features: pd.DataFrame, train: List[str], training_features: pd.DataFrame) -> pd.DataFrame:
         # create and train classifier
         classifier = Pipeline.init_classifier()
         classifier.fit(X=training_features[[" ".join(n_gram) for n_gram in selected_n_grams]],
@@ -71,7 +75,8 @@ class Pipeline(object):
                                                "MAE": [mae]})
         return result
 
-    def create_features(self, testing_data, training_data):
+    def create_features(self, testing_data: pd.DataFrame, training_data: pd.DataFrame) \
+            -> Tuple[Set[Tuple[str]], pd.DataFrame, pd.DataFrame]:
         # get training features and a list of n-grams which occurred in training data
         training_features, selected_n_grams = features.create_features(training_data,
                                                                        n_gram_length=self.n_gram_length)

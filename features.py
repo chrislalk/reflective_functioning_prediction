@@ -1,4 +1,4 @@
-from typing import Tuple, Set
+from typing import Tuple, Set, Dict
 import pandas as pd
 import numpy as np
 
@@ -6,7 +6,7 @@ import tokenizer
 import utils
 
 
-def create_features(df: pd.DataFrame, n_gram_length,
+def create_features(df: pd.DataFrame, n_gram_length: int,
                     n_gram_selection: Set[Tuple[str]] = None) -> Tuple[pd.DataFrame, Set[Tuple[str]]]:
     """
 
@@ -16,7 +16,7 @@ def create_features(df: pd.DataFrame, n_gram_length,
     :return: The features as a dataframe,
     """
     if n_gram_selection is None:
-        n_gram_selection = count_all_n_grams(df, n_gram_length, n_gram_selection)
+        n_gram_selection = count_all_n_grams(df, n_gram_length)
 
     all_samples = []
     # each row in the dataframe is a sample for training/testing
@@ -28,13 +28,13 @@ def create_features(df: pd.DataFrame, n_gram_length,
         feature_df = n_gram_counts_to_df(df, n_gram_counts, segment_df)
         feature_df = normalize_count_vector(feature_df)
         # Prepend the original sample info (subject, block etc.). This would be removed if we were to use
-        # indices (see above)
+        # subject, session etc. as indices and remove all other columns
         feature_df = pd.concat([segment_df, feature_df], axis=1, ignore_index=False)
         all_samples += [feature_df]
     return pd.concat(all_samples, axis=0, ignore_index=True), n_gram_selection
 
 
-def normalize_count_vector(feature_df):
+def normalize_count_vector(feature_df: pd.DataFrame) -> pd.DataFrame:
     # normalize word counts to compensate for different lengths of segments
     df_sum = feature_df.sum(axis=1)
     if np.all(df_sum > 0):
@@ -45,7 +45,7 @@ def normalize_count_vector(feature_df):
     return feature_df
 
 
-def count_all_n_grams(df, n_gram_length, n_gram_selection):
+def count_all_n_grams(df: pd.DataFrame, n_gram_length: int) -> Set[Tuple[str]]:
     # find all n-grams occurring in the dataframe
     n_gram_selection = set()
     for idx, segment in df.iterrows():
@@ -55,7 +55,7 @@ def count_all_n_grams(df, n_gram_length, n_gram_selection):
     return n_gram_selection
 
 
-def n_gram_counts_to_df(df, n_gram_counts, segment_df):
+def n_gram_counts_to_df(df: pd.DataFrame, n_gram_counts: int, segment_df: pd.DataFrame) -> pd.DataFrame:
     # convert all dictionary entries into dataframes
     feature_df = []
     for n_gram, count in n_gram_counts.items():
@@ -74,7 +74,7 @@ def n_gram_counts_to_df(df, n_gram_counts, segment_df):
     return feature_df
 
 
-def count_n_grams(n_gram_length, n_gram_selection, segment):
+def count_n_grams(n_gram_length: int, n_gram_selection: Set[Tuple[str]], segment: pd.Series) -> Dict[Tuple[str], int]:
     n_gram_counts = dict()
     # first, count the n-grams from the selection which do exist in the current row
     for line in segment["Segment_preproc"]:
