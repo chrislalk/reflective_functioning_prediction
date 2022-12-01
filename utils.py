@@ -11,3 +11,8 @@ def add_dicts(a: Dict[Tuple[str], int], b: Dict[Tuple[str], int]) -> Dict[Tuple[
     for key, value in b.items():
         a[key] = a.get(key, 0) + value
     return a
+
+
+def read_file_contents_lowercase(path):
+    with open(path, "r") as f:
+        return set([line.strip().lower() for line in f.readlines()])

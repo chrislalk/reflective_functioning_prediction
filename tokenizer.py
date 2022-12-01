@@ -1,4 +1,5 @@
 from typing import List, Dict, Literal, TextIO
+import utils
 import re
 
 _RE_COMBINE_WHITESPACE = re.compile(r"\s+")
@@ -11,6 +12,8 @@ REPLACE_TO_DOTS = [
 ]
 _RE_VALID_WORD = re.compile(r"^[äöüßÄÖÜa-zA-Z]*[0-9]*$")
 _RE_HYPHENATED_WORD = re.compile(f"^[äöüßÄÖÜa-zA-Z]+(-[äöüßÄÖÜa-zA-Z]+)+$")
+
+IGNORE_WORDS = list(utils.read_file_contents_lowercase("ignore_words.txt"))
 
 
 def keep_token(token: str) -> bool:
@@ -28,6 +31,8 @@ def keep_token(token: str) -> bool:
             token == "+" or\
             token == "-" or\
             token == '–':
+        return False
+    if token.lower() in IGNORE_WORDS:
         return False
     if _RE_VALID_WORD.match(token) is None and not token == ".":
         # word does not match rule
@@ -139,8 +144,9 @@ def tokens_to_sentences(tokens: List[str]) -> List[List[str]]:
     current_sentence = []
     for token in tokens:
         if token == ".":
-            assert len(current_sentence) > 0
-            sentences += [current_sentence]
+            if len(current_sentence) > 0:
+                # sometimes, sentences are empty because they only contain fill or trivial words
+                sentences += [current_sentence]
             current_sentence = []
         else:
             current_sentence += [token]
