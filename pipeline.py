@@ -1,5 +1,7 @@
 import data_reader
 import features
+import tokenizer
+import utils
 
 from typing import List, Tuple, Iterable, Set
 import sklearn.model_selection
@@ -7,9 +9,6 @@ import sklearn.svm
 import pandas as pd
 import numpy as np
 import os
-
-import tokenizer
-import utils
 
 
 class Pipeline(object):
@@ -74,12 +73,12 @@ class Pipeline(object):
     @staticmethod
     def score_result(selected_n_grams: Set[Tuple[str]], test: List[str], testing_data: pd.DataFrame,
                      testing_features: pd.DataFrame, train: List[str], training_features: pd.DataFrame) -> pd.DataFrame:
-        # create and train classifier
-        classifier = Pipeline.init_classifier()
-        classifier.fit(X=training_features[[" ".join(n_gram) for n_gram in selected_n_grams]],
-                       y=training_features["RF-Score"])
+        # create and train algorithm
+        algorithm = Pipeline.init_classifier()
+        algorithm.fit(X=training_features[[" ".join(n_gram) for n_gram in selected_n_grams]],
+                      y=training_features["RF-Score"])
         # obtain predictions and score
-        predictions = classifier.predict(X=testing_features[[" ".join(n_gram) for n_gram in selected_n_grams]])
+        predictions = algorithm.predict(X=testing_features[[" ".join(n_gram) for n_gram in selected_n_grams]])
         mae = np.mean(np.abs(testing_data["RF-Score"] - predictions))
         result = pd.DataFrame(index=[0], data={"test": [test], "train": [train],
                                                "actual": [testing_data["RF-Score"].values],

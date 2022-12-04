@@ -13,6 +13,6 @@ def add_dicts(a: Dict[Tuple[str], int], b: Dict[Tuple[str], int]) -> Dict[Tuple[
     return a
 
 
-def read_file_contents_lowercase(path):
+def read_file_contents_lowercase(path: str) -> set[str]:
     with open(path, "r") as f:
         return set([line.strip().lower() for line in f.readlines()])
