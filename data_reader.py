@@ -10,13 +10,15 @@ def keep_line(line: str) -> bool:
     ls = line.strip()
     if len(ls) == 0:
         return False
-    if ls.startswith("{") and ls.endswith("}"):
+    if ls.startswith("(") and ls.endswith(")"):
+        return False
+    elif ls.startswith("{") and ls.endswith("}"):
         return False
     elif ls.startswith("[") and ls.endswith("]"):
         return False
-    if not (ls.startswith("T:") or ls.startswith("P:")):
+    if not (ls.upper().startswith("T:") or ls.upper().startswith("P:")):
         raise ValueError(f"Unknown line type (who is speaking?): {ls}")
-    if ls.startswith("T:"):
+    if ls.upper().startswith("T:"):
         return False
     return True
 
