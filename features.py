@@ -15,13 +15,21 @@ def prepare_sentence_list(sentences: List[str]) -> str:
     return ". ".join([strip_ending_characters(sentence) for sentence in sentences])
 
 
+def row_to_dict(row: pd.Series, min_score: int) -> dict:
+    d = {"score": row["RF-Score"]-min_score, "patient": row["Patient"], "session": row["Session"],
+         "segment": prepare_sentence_list(row["Segment_preproc"])}
+    if not d["score"] == int(d["score"]):
+        raise ValueError(f"Score out of range: {d['score']}")
+    else:
+        d["score"] = int(d["score"])
+    return d
+
+
 def create_features(df: pd.DataFrame, min_score: int = 0) -> List[Dict[str, Union[str, int]]]:
     """
     :param df:
     :param min_score: Lowest score in the data. Scores will get translated so that they start at zero
     :return:
     """
-    features = [{"score": row["RF-Score"]-min_score, "patient": row["Patient"], "session": row["Session"],
-                 "segment": prepare_sentence_list(row["Segment_preproc"])}
-                for idx, row in df.iterrows()]
+    features = [row_to_dict(row, min_score=min_score) for idx, row in df.iterrows()]
     return features

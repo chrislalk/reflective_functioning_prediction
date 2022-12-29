@@ -1,11 +1,11 @@
 import data_reader
 import features
-import tokenizer
-import utils
+
 
 from typing import List, Tuple, Iterable, Set
 import pandas as pd
 import numpy as np
+import json
 import os
 from transformers import DataCollatorWithPadding, AutoTokenizer, AutoModel, AutoConfig
 from transformers.modeling_outputs import MultipleChoiceModelOutput
@@ -65,10 +65,13 @@ class Pipeline(object):
         self.n_levels = None
         self.model = None
         self.model_state_path = os.path.join(output_dir, "rf_model")
+        os.makedirs(output_dir, exist_ok=True)
 
     def run(self) -> None:
         full_data = data_reader.read_full_dataset(self.data_file)
         all_data = features.create_features(full_data, min_score=full_data["RF-Score"].min())
+        with open(os.path.join(self.output_dir, "all_data.json"), "w", encoding="utf8") as f:
+            json.dump(all_data, f, indent=2, ensure_ascii=False)
         print(all_data)
         self.n_levels = max(all_data, key=lambda x: x["score"])["score"]
         self.model = CustomModel(MODEL_NAME, n_levels=self.n_levels)
