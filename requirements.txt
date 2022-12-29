@@ -1,5 +1,12 @@
 numpy
-scikit-learn
-pandas
 openpyxl
 ipython
+transformers[sentencepiece]
+datasets
+evaluate
+torch
+torchvision
+torchaudio
+pytorch-cuda==11.7
+scikit-learn
+pandas
