@@ -1,3 +1,5 @@
+import pandas as pd
+
 import data_reader
 import features
 
@@ -78,6 +80,7 @@ class Pipeline(object):
         self.n_levels = None
         self.model = None
         self.dataset_file = None
+        self.eval_data = None
         self.model_state_path = os.path.join(output_dir, "rf_model")
         self.dataset_file = os.path.join(self.output_dir, "all_data.json")
         self.datasets_cache_dir = os.path.join(self.output_dir, "datasets_cache")
@@ -95,10 +98,12 @@ class Pipeline(object):
         except FileNotFoundError:
             self.model_fit()
             self.model.save_state(self.model_state_path)
+            self.eval_data.to_csv(os.path.join(self.output_dir, "test_results.txt"), sep="\t", index=False)
         #output_file = os.path.join(self.output_dir, "cv_results.txt")
         #result_df.to_csv(output_file, sep="\t", index=False)
 
     def model_fit(self) -> None:
+        # use GPU or, if not available, CPU
         #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         device = torch.device("cpu")
 
@@ -131,6 +136,9 @@ class Pipeline(object):
         progress_bar_eval = tqdm(range(num_epochs * len(eval_dataloader)))
 
         for epoch in range(num_epochs):
+            # save values and predictions for diagnostics
+            eval_data = []
+
             self.model.train()
             for batch in train_dataloader:
                 batch = {k: v.to(device) for k, v in batch.items()}
@@ -150,12 +158,17 @@ class Pipeline(object):
                     outputs = self.model(**batch)
 
                 logits = outputs.logits
-                predictions = torch.argmax(logits, dim=-1)
+                predictions = torch.argmax(logits, dim=1)
+                eval_data += [pd.DataFrame(index=[0], data={
+                    "actual": [batch["labels"].tolist()], "prediction": [predictions.tolist()],
+                    "mae": [(batch["labels"].double()-predictions.double()).abs().mean().tolist()]})]
+
                 metric.add_batch(predictions=predictions, references=batch["labels"])
                 progress_bar_eval.update(1)
 
             print(metric.compute())
-
+        self.eval_data = pd.concat(eval_data, ignore_index=True)
+        print(self.eval_data)
         self.model.eval()
 
     def preprocess_data(self) -> Dict:
