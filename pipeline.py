@@ -73,9 +73,10 @@ class CustomModel(nn.Module):
 
 
 class Pipeline(object):
-    def __init__(self, data_file: str, output_dir: str):
+    def __init__(self, data_file: str, output_dir: str, raise_errors: bool = True):
         self.data_file = data_file
         self.output_dir = output_dir
+        self.raise_errors = raise_errors
         self.full_dataset = None
         self.n_levels = None
         self.model = None
@@ -173,7 +174,8 @@ class Pipeline(object):
 
     def preprocess_data(self) -> Dict:
         full_data = data_reader.read_full_dataset(self.data_file)
-        all_data = features.create_features(full_data, min_score=full_data["RF-Score"].min())
+        all_data = features.create_features(full_data, min_score=full_data["RF-Score"].min(),
+                                            raise_errors=self.raise_errors)
         with open(self.dataset_file, "w", encoding="utf8") as f:
             json.dump(all_data, f, indent=2, ensure_ascii=False)
         return all_data
@@ -205,6 +207,7 @@ class Pipeline(object):
 
 
 if __name__ == '__main__':
+    # pipeline = Pipeline(r"..\Segmente AB12.xlsx", n_gram_length=3, output_dir=r"output", raise_errors=False)
     pipeline = Pipeline(r"..\data\Beispiel-Segmente CRF.xlsx", output_dir=r"..\output")
     pipeline.run()
     #tokenizer.write_vocabulary_by_frequency(pipeline.vocabulary, handle=sys.stdout, sorting="lexicographic")

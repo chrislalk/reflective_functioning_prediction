@@ -1,5 +1,5 @@
-from typing import List, Dict, Literal, TextIO
-import utils
+from typing import Type, List, Dict, Literal, TextIO
+import warnings
 import re
 
 _RE_COMBINE_WHITESPACE = re.compile(r"\s+")
@@ -17,7 +17,14 @@ _RE_END_MULTIPLE_HYPHENS = re.compile(f"^([^-]+)-+-$")
 #IGNORE_WORDS = list(utils.read_file_contents_lowercase("ignore_words.txt"))
 
 
-def keep_token(token: str) -> bool:
+def error_handler(msg: str, raise_errors: bool = True, errortype: Type[BaseException] = ValueError):
+    if raise_errors:
+        raise errortype(msg)
+    else:
+        warnings.warn(msg)
+
+
+def keep_token(token: str, raise_errors: bool = True) -> bool:
     """
     Returns a boolean indicating whether a token should be kept
     """
@@ -41,16 +48,16 @@ def keep_token(token: str) -> bool:
         # word does not match rule
         # see if it is an anonymized name/place etc.
         if (token.endswith("*") or token.endswith(".") or token[-1].isnumeric()) \
-                and keep_token(token[:-1]):
+                and keep_token(token[:-1], raise_errors=raise_errors):
             pass
         elif token.isnumeric() or token == ".":
             pass
         else:
-            raise ValueError(f"Not a word: {token}")
+            error_handler(f"Not a word: {token}", raise_errors)
     return True
 
 
-def strip_brackets(segment: str, start_char: str = "(", end_char: str = ")") -> str:
+def strip_brackets(segment: str, start_char: str = "(", end_char: str = ")", raise_errors: bool = True) -> str:
     """
     Remove brackets and all content within. Checks for every opening bracket if it is closed.
     :param segment: The text
@@ -68,11 +75,11 @@ def strip_brackets(segment: str, start_char: str = "(", end_char: str = ")") -> 
         elif char == end_char:
             open_brackets -= 1
             if open_brackets < 0:
-                raise ValueError("Found closing bracket without opening bracket")
+                error_handler("Found closing bracket without opening bracket", raise_errors)
         elif open_brackets == 0:
             non_bracket_text += char
     if open_brackets > 0:
-        raise ValueError("Opening bracket was never closed")
+        error_handler("Opening bracket was never closed", raise_errors)
     return non_bracket_text
 
 
@@ -87,7 +94,7 @@ def process_word(word: str) -> str:
     return word
 
 
-def prepare_segment_for_tokenization(segment: str) -> str:
+def prepare_segment_for_tokenization(segment: str, raise_errors: bool = True) -> str:
     """
     Apply various replacements, strip brackets
     """
@@ -111,12 +118,12 @@ def prepare_segment_for_tokenization(segment: str) -> str:
     for start_char, end_char in [["(", ")"],
                                  ["[", "]"],
                                  ["{", "}"]]:
-        segment = strip_brackets(segment, start_char=start_char, end_char=end_char)
+        segment = strip_brackets(segment, start_char=start_char, end_char=end_char, raise_errors=raise_errors)
     # insert whitespace after "P:" if it is not present
     if len(segment) > 2 and segment[1] == ":" and not segment[2] == " ":
         segment = segment[:2] + " " + segment[2:]
     # split by whitespaces, transform
     words = [process_word(word) for word in segment.split(" ")]
-    words = [word for word in words if keep_token(word)]
+    words = [word for word in words if keep_token(word, raise_errors=raise_errors)]
     segment = " ".join(words)
     return segment
